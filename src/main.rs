@@ -1,16 +1,18 @@
-mod conversions;
+use std::env;
+use std::process;
+
+use dconv;
+use dconv::Config;
 
 fn main() {
-    let test1 = conversions::decimal_to_binary("10");
-    let test2 = conversions::binary_to_decimal("1011");
+    let args: Vec<String> = env::args().collect();
 
-    match test1 {
-        Ok(i) => println!("{}", i),
-        Err(msg) => println!("error: {}", msg)
-    }
+    let config = Config::new(&args).unwrap_or_else(|err| {
+        dconv::print_error(err);
+        dconv::print_usage();
+        process::exit(1);
+    });
 
-    match test2 {
-        Ok(i) => println!("{}", i),
-        Err(msg) => println!("error: {}", msg)
-    }
+    dconv::run(config);
+
 }
