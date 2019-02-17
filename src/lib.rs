@@ -14,27 +14,14 @@ impl Config {
     }
 }
 
-pub fn run(config: Config) {
-    let result = match &config.argument[0..2] {
+pub fn run(config: Config) -> Result<String, &'static str> {
+    match &config.argument[0..2] {
         "0b" => binary_to_decimal(&config.argument),
         "0o" => octal_to_decimal(&config.argument),
         _ => {
             decimal_to_binary(&config.argument)
         }
-    };
-
-    match result {
-        Ok(s) => println!("{}", s),
-        Err(msg) => print_error(msg)
-    };
-}
-
-pub fn print_error(msg: &str) {
-    eprintln!("error: {}", msg);
-}
-
-pub fn print_usage() {
-    eprintln!("Usage: dconv [options] <value>");
+    }
 }
 
 pub fn decimal_to_binary(argument: &str) -> Result<String, &'static str> {
@@ -110,32 +97,34 @@ fn decimal_to_radix(radix: u32, argument: &str, prefix: &str) -> Result<String, 
 mod tests {
     use super::*;
 
+    fn test_config(arg: &str) -> Config {
+        let args = vec![String::from("dcon"), String::from(arg)];
+        Config::new(&args).unwrap()
+    }
+
     #[test]
     fn converts_decimal_to_binary() {
-        assert_eq!(decimal_to_binary("42"), Ok(String::from("0b101010")));
+        assert_eq!(run(test_config("42")), Ok(String::from("0b101010")));
     }
 
     #[test]
     fn converts_decimal_to_octal() {
-        assert_eq!(decimal_to_octal("42"), Ok(String::from("0o52")));
+        assert_eq!(run(test_config("42")), Ok(String::from("0o52")));
     }
 
     #[test]
     fn converts_binary_to_decimal() {
-        assert_eq!(binary_to_decimal("0b101010"), Ok(String::from("42")));
+        assert_eq!(run(test_config("0b101010")), Ok(String::from("42")));
     }
 
     #[test]
     fn converts_octal_to_decimal() {
-        assert_eq!(octal_to_decimal("0o52"), Ok(String::from("42")));
+        assert_eq!(run(test_config("0o52")), Ok(String::from("42")));
     }
 
     #[test]
     fn does_not_convert_invalid_argument() {
-        assert_eq!(decimal_to_binary("abcd"), Err("invalid conversion argument."));
-        assert_eq!(decimal_to_octal("abcd"), Err("invalid conversion argument."));
-        assert_eq!(binary_to_decimal("abcd"), Err("invalid conversion argument."));
-        assert_eq!(octal_to_decimal("abcd"), Err("invalid conversion argument."));
+        assert_eq!(run(test_config("0h42")), Err("invalid conversion argument."));
     }
 
 }
