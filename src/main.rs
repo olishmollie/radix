@@ -1,29 +1,22 @@
 use std::env;
 use std::process;
 
-use dconv;
-use dconv::Config;
+use nconv;
+use nconv::Config;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let argv: Vec<String> = env::args().collect();
 
-    let config = Config::new(&args).unwrap_or_else(|err| {
-        print_error(err);
-        print_usage();
+    let config = Config::new(&argv).unwrap_or_else(|err| {
+        eprintln!("{}", err);
         process::exit(1);
     });
 
-    match dconv::run(config) {
+    match nconv::run(config) {
         Ok(s) => println!("{}", s),
-        Err(s) => print_error(s)
+        Err(e) => {
+            eprintln!("{}", e);
+            process::exit(1);
+        }
     }
-
-}
-
-pub fn print_error(msg: &str) {
-    eprintln!("error: {}", msg);
-}
-
-pub fn print_usage() {
-    eprintln!("Usage: dconv [options] <value>");
 }
