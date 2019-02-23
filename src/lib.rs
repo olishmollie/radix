@@ -8,12 +8,13 @@ const USAGE: &'static str = "
 Usage:
     nconv -h | --help
     nconv -v | --version
-    nconv [-b | -o | -x] <value>
+    nconv [-b | -d | -o | -x ] <value>
 
 Options:
     -h, --help         Print this message.
     -v, --version      Print version.
     -b, --binary       Set target to binary.
+    -d, --decimal      Set target to decimal.
     -o, --octal        Set target to octal.
     -x, --hexadecimal  Set target to hexadecimal.
 ";
@@ -62,6 +63,10 @@ pub fn run(config: Config) -> Result<String, &'static str> {
     if config.value.starts_with("0") && config.value.len() >= 2 {
         match &config.value[0..2] {
             "0b" => match config.target {
+                Target::Binary => {
+                    let tmp = binary_to_decimal(&config.value)?;
+                    decimal_to_binary(&tmp)
+                }
                 Target::Decimal => binary_to_decimal(&config.value),
                 Target::Hexadecimal => {
                     let tmp = binary_to_decimal(&config.value)?;
@@ -71,7 +76,6 @@ pub fn run(config: Config) -> Result<String, &'static str> {
                     let tmp = binary_to_decimal(&config.value)?;
                     decimal_to_octal(&tmp)
                 }
-                _ => Err("Unsupported conversion target."),
             },
             "0o" => match config.target {
                 Target::Binary => {
@@ -83,7 +87,10 @@ pub fn run(config: Config) -> Result<String, &'static str> {
                     let tmp = octal_to_decimal(&config.value)?;
                     decimal_to_hexadecimal(&tmp)
                 }
-                _ => Err("Unsupported conversion target."),
+                Target::Octal => {
+                    let tmp = octal_to_decimal(&config.value)?;
+                    decimal_to_octal(&tmp)
+                }
             },
             "0x" => match config.target {
                 Target::Binary => {
@@ -91,20 +98,26 @@ pub fn run(config: Config) -> Result<String, &'static str> {
                     decimal_to_binary(&tmp)
                 }
                 Target::Decimal => hexadecimal_to_decimal(&config.value),
+                Target::Hexadecimal => {
+                    let tmp = hexadecimal_to_decimal(&config.value)?;
+                    decimal_to_hexadecimal(&tmp)
+                }
                 Target::Octal => {
                     let tmp = hexadecimal_to_decimal(&config.value)?;
                     decimal_to_octal(&tmp)
                 }
-                _ => Err("Unsupported conversion target."),
             },
             _ => Err("Invalid conversion value."),
         }
     } else {
         match config.target {
             Target::Binary => decimal_to_binary(&config.value),
+            Target::Decimal => {
+                let tmp = decimal_to_binary(&config.value)?;
+                binary_to_decimal(&tmp)
+            }
             Target::Octal => decimal_to_octal(&config.value),
             Target::Hexadecimal => decimal_to_hexadecimal(&config.value),
-            _ => Err("Unsupported conversion target."),
         }
     }
 }
@@ -300,10 +313,24 @@ mod tests {
     }
 
     #[test]
+    fn parses_long_flags() {
+        let args = vec!["0o52", "--binary"];
+        let config = test_config(args);
+        assert_eq!(run(config), Ok(String::from("0b101010")));
+    }
+
+    #[test]
     fn does_not_convert_invalid_argument() {
         let args = vec!["0h42"];
         let config = test_config(args);
         assert_eq!(run(config), Err("Invalid conversion value."));
+    }
+
+    #[test]
+    fn converts_its_own_radix() {
+        let args = vec!["42", "-d"];
+        let config = test_config(args);
+        assert_eq!(run(config), Ok(String::from("42")))
     }
 
     #[test]
