@@ -1,7 +1,10 @@
 # nconv
 
-Number Converter
+Number CONVerter
 
+`brew install olishmollie/tools/nconv`
+
+```
 Usage:
     nconv -h | --help
     nconv -v | --version
@@ -14,3 +17,4 @@ Options:
     -d, --decimal      Set target to decimal.
     -o, --octal        Set target to octal.
     -x, --hexadecimal  Set target to hexadecimal.
+```
