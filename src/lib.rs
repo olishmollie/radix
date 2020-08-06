@@ -2,39 +2,48 @@ use std::process;
 
 use docopt::Docopt;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 Usage:
     nconv -h | --help
     nconv -v | --version
-    nconv [-b | -d | -o | -x ] <value>
+    nconv [ -b | -d | -o | -x ] [ -n ] <value>
 
 Options:
     -h, --help         Print this message.
     -v, --version      Print version.
-    -b, --binary       Set target to binary.
-    -d, --decimal      Set target to decimal.
-    -o, --octal        Set target to octal.
-    -x, --hexadecimal  Set target to hexadecimal.
+    -b, --binary       Set radix to binary.
+    -d, --decimal      Set radix to decimal.
+    -n, --negative     Use two's complement.
+    -o, --octal        Set radix to octal.
+    -x, --hexadecimal  Set radix to hexadecimal.
+
+Example:
+    nconv -d 0o27
+    nconv -x 0b1010011
+    nconv -b --negative 144
 ";
 
-enum Target {
+#[derive(Debug)]
+enum Radix {
     Binary,
     Decimal,
     Octal,
     Hexadecimal,
 }
 
+#[derive(Debug)]
 pub struct Config {
     value: String,
-    target: Target,
+    radix: Radix,
+    negative: bool,
 }
 
 impl Config {
     pub fn new(argv: &[String]) -> Result<Config, &'static str> {
         let args = Docopt::new(USAGE)
-            .and_then(|d| d.argv(argv.into_iter()).parse())
+            .and_then(|d| d.argv(argv.iter()).parse())
             .unwrap_or_else(|e| e.exit());
 
         if args.get_bool("-v") {
@@ -43,179 +52,97 @@ impl Config {
         }
 
         let value = args.get_str("<value>").to_string();
+        let negative = args.get_bool("-n");
 
-        let target: Target;
+        let radix: Radix;
         if args.get_bool("-b") {
-            target = Target::Binary;
+            radix = Radix::Binary;
         } else if args.get_bool("-o") {
-            target = Target::Octal;
+            radix = Radix::Octal;
         } else if args.get_bool("-x") {
-            target = Target::Hexadecimal;
+            radix = Radix::Hexadecimal;
         } else {
-            target = Target::Decimal;
+            radix = Radix::Decimal;
         }
 
-        Ok(Config { value, target })
+        Ok(Config {
+            value,
+            radix,
+            negative,
+        })
     }
 }
 
-pub fn run(config: Config) -> Result<String, &'static str> {
-    if config.value.starts_with("0") && config.value.len() >= 2 {
-        match &config.value[0..2] {
-            "0b" => match config.target {
-                Target::Binary => {
-                    let tmp = binary_to_decimal(&config.value)?;
-                    decimal_to_binary(&tmp)
-                }
-                Target::Decimal => binary_to_decimal(&config.value),
-                Target::Hexadecimal => {
-                    let tmp = binary_to_decimal(&config.value)?;
-                    decimal_to_hexadecimal(&tmp)
-                }
-                Target::Octal => {
-                    let tmp = binary_to_decimal(&config.value)?;
-                    decimal_to_octal(&tmp)
-                }
-            },
-            "0o" => match config.target {
-                Target::Binary => {
-                    let tmp = octal_to_decimal(&config.value)?;
-                    decimal_to_binary(&tmp)
-                }
-                Target::Decimal => octal_to_decimal(&config.value),
-                Target::Hexadecimal => {
-                    let tmp = octal_to_decimal(&config.value)?;
-                    decimal_to_hexadecimal(&tmp)
-                }
-                Target::Octal => {
-                    let tmp = octal_to_decimal(&config.value)?;
-                    decimal_to_octal(&tmp)
-                }
-            },
-            "0x" => match config.target {
-                Target::Binary => {
-                    let tmp = hexadecimal_to_decimal(&config.value)?;
-                    decimal_to_binary(&tmp)
-                }
-                Target::Decimal => hexadecimal_to_decimal(&config.value),
-                Target::Hexadecimal => {
-                    let tmp = hexadecimal_to_decimal(&config.value)?;
-                    decimal_to_hexadecimal(&tmp)
-                }
-                Target::Octal => {
-                    let tmp = hexadecimal_to_decimal(&config.value)?;
-                    decimal_to_octal(&tmp)
-                }
-            },
-            _ => Err("Invalid conversion value."),
+pub fn run(config: Config) -> Result<String, String> {
+    println!("{:?}", config);
+
+    if config.value.starts_with('0') && config.value.len() >= 2 {
+        let n = match &config.value[0..2] {
+            "0b" => from_string_radix(&config.value[2..], 2)?,
+            "0o" => from_string_radix(&config.value[2..], 8)?,
+            "0x" => from_string_radix(&config.value[2..], 16)?,
+            _ => return Err(format!("Unknown prefix {}.", &config.value[0..2])),
+        };
+
+        match config.radix {
+            Radix::Decimal => to_string_radix(n, 10),
+            Radix::Binary => Ok(format!("0b{}", to_string_radix(n, 2)?)),
+            Radix::Octal => Ok(format!("0o{}", to_string_radix(n, 8)?)),
+            Radix::Hexadecimal => Ok(format!("0x{}", to_string_radix(n, 16)?)),
         }
     } else {
-        match config.target {
-            Target::Binary => decimal_to_binary(&config.value),
-            Target::Decimal => {
-                let tmp = decimal_to_binary(&config.value)?;
-                binary_to_decimal(&tmp)
-            }
-            Target::Octal => decimal_to_octal(&config.value),
-            Target::Hexadecimal => decimal_to_hexadecimal(&config.value),
+        let n = from_string_radix(&config.value, 10)?;
+        match config.radix {
+            Radix::Decimal => to_string_radix(n, 10),
+            Radix::Binary => Ok(format!("0b{}", to_string_radix(n, 2)?)),
+            Radix::Octal => Ok(format!("0o{}", to_string_radix(n, 8)?)),
+            Radix::Hexadecimal => Ok(format!("0x{}", to_string_radix(n, 16)?)),
         }
     }
 }
 
-fn decimal_to_binary(value: &str) -> Result<String, &'static str> {
-    decimal_to_radix(2, value, "0b")
+fn to_string_radix(mut n: u32, radix: u32) -> Result<String, String> {
+    let mut s = vec![];
+
+    while n > 0 {
+        let d = n % radix;
+        match std::char::from_digit(d, radix) {
+            Some(c) => s.push(c),
+            None => {
+                return Err(format!(
+                    "Invalid conversion value {} for radix {}.",
+                    d, radix
+                ))
+            }
+        }
+        n /= radix;
+    }
+
+    if s.is_empty() {
+        Ok(String::from("0"))
+    } else {
+        Ok(s.iter().rev().collect())
+    }
 }
 
-fn decimal_to_octal(value: &str) -> Result<String, &'static str> {
-    decimal_to_radix(8, value, "0o")
-}
-
-fn decimal_to_hexadecimal(value: &str) -> Result<String, &'static str> {
-    decimal_to_radix(16, value, "0x")
-}
-
-fn binary_to_decimal(value: &str) -> Result<String, &'static str> {
-    radix_to_decimal(2, value)
-}
-
-fn octal_to_decimal(value: &str) -> Result<String, &'static str> {
-    radix_to_decimal(8, value)
-}
-
-fn hexadecimal_to_decimal(value: &str) -> Result<String, &'static str> {
-    radix_to_decimal(16, value)
-}
-
-fn radix_to_decimal(radix: u32, value: &str) -> Result<String, &'static str> {
+fn from_string_radix(s: &str, radix: u32) -> Result<u32, String> {
     let mut result = 0;
     let mut power = 0;
 
-    for c in value[2..].chars().rev() {
-        match to_number(c) {
-            Ok(n) => {
+    for c in s.chars().rev() {
+        match char::to_digit(c, radix) {
+            Some(n) => {
                 if n >= radix {
-                    return Err("Invalid conversion value.");
+                    return Err(format!("Invalid digit {} for radix {}.", n, radix));
                 }
                 result += n * radix.pow(power);
                 power += 1;
             }
-            Err(e) => return Err(e),
+            None => return Err(format!("Cannot convert {} to integer radix {}.", s, radix)),
         }
-    }
-
-    Ok(result.to_string())
-}
-
-fn decimal_to_radix(radix: u32, value: &str, prefix: &str) -> Result<String, &'static str> {
-    let mut result = String::from(prefix);
-    let mut number: u32;
-
-    match value.parse() {
-        Ok(i) => number = i,
-        Err(_) => return Err("Invalid conversion value."),
-    };
-
-    while number > 0 {
-        let digit = number % radix;
-        match to_string(digit) {
-            Ok(s) => result.insert_str(2, &s),
-            Err(e) => return Err(e),
-        }
-        number /= radix;
     }
 
     Ok(result)
-}
-
-fn to_string(digit: u32) -> Result<String, &'static str> {
-    if digit <= 9 {
-        Ok(digit.to_string())
-    } else {
-        match digit {
-            10 => Ok(String::from("a")),
-            11 => Ok(String::from("b")),
-            12 => Ok(String::from("c")),
-            13 => Ok(String::from("d")),
-            14 => Ok(String::from("e")),
-            15 => Ok(String::from("f")),
-            _ => Err("Invalid conversion value."),
-        }
-    }
-}
-
-fn to_number(c: char) -> Result<u32, &'static str> {
-    match c.to_digit(10) {
-        Some(n) => Ok(n),
-        None => match c {
-            'a' => Ok(10),
-            'b' => Ok(11),
-            'c' => Ok(12),
-            'd' => Ok(13),
-            'e' => Ok(14),
-            'f' => Ok(15),
-            _ => Err("Invalid conversion value."),
-        },
-    }
 }
 
 #[cfg(test)]
@@ -323,7 +250,7 @@ mod tests {
     fn does_not_convert_invalid_argument() {
         let args = vec!["0h42"];
         let config = test_config(args);
-        assert_eq!(run(config), Err("Invalid conversion value."));
+        assert!(run(config).is_err());
     }
 
     #[test]
@@ -351,7 +278,20 @@ mod tests {
     fn does_not_convert_invalid_radix() {
         let args = vec!["0b12"];
         let config = test_config(args);
-        assert_eq!(run(config), Err("Invalid conversion value."));
+        assert!(run(config).is_err());
     }
 
+    // #[test]
+    // fn converts_negative_decimal_to_binary() {
+    //     let args = vec!["-b", "-n", "127"];
+    //     let config = test_config(args);
+    //     assert_eq!(run(config), Ok(String::from("0b10000001")))
+    // }
+
+    // #[test]
+    // fn converts_negative_binary_to_decimal() {
+    //     let args = vec!["-d", "-n", "0b10000001"];
+    //     let config = test_config(args);
+    //     assert_eq!(run(config), Ok(String::from("-127")))
+    // }
 }
