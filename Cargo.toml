@@ -1,5 +1,5 @@
 [package]
-name = "nconv"
+name = "radix"
 version = "0.1.0"
 authors = ["AJ Bond <olishmollie@gmail.com>"]
 edition = "2018"

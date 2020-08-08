@@ -1,21 +1,22 @@
 use std::env;
-use std::process;
+use std::process::exit;
 
-use nconv::Config;
+use radix::run;
+use radix::Config;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
 
     let config = Config::new(&argv).unwrap_or_else(|err| {
         eprintln!("{}", err);
-        process::exit(1);
+        exit(1);
     });
 
-    match nconv::run(config) {
+    match run(config) {
         Ok(s) => println!("{}", s),
         Err(e) => {
             eprintln!("{}", e);
-            process::exit(1);
+            exit(1);
         }
     }
 }

@@ -6,9 +6,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const USAGE: &str = "
 Usage:
-    nconv -h | --help
-    nconv -v | --version
-    nconv [ -b | -d | -o | -x ] [ -n ] <value>
+    radix -h | --help
+    radix -v | --version
+    radix [ -b | -d | -o | -x ] [ -n ] <value>
 
 Options:
     -h, --help         Print this message.
@@ -20,9 +20,9 @@ Options:
     -x, --hexadecimal  Set radix to hexadecimal.
 
 Example:
-    nconv -d 0o27
-    nconv -x 0b1010011
-    nconv -b --negative 144
+    radix -d 0o27
+    radix -x 0b1010011
+    radix -b --negative 144
 ";
 
 #[derive(Debug)]
@@ -47,7 +47,7 @@ impl Config {
             .unwrap_or_else(|e| e.exit());
 
         if args.get_bool("-v") {
-            println!("nconv {}", VERSION);
+            println!("radix {}", VERSION);
             process::exit(0);
         }
 
@@ -196,7 +196,7 @@ mod tests {
     use super::*;
 
     fn test_config(mut args: Vec<&'static str>) -> Config {
-        args.insert(0, "nconv");
+        args.insert(0, "radix");
         let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();
         Config::new(&args).unwrap()
     }
