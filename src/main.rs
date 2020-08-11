@@ -5,10 +5,9 @@ use radix::*;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
+    let options = Options::new(argv.iter().map(String::as_str).collect());
 
-    let config = Config::new(&argv);
-
-    match run(config) {
+    match convert(options) {
         Ok(s) => println!("{}", s),
         Err(e) => {
             eprintln!("{}", e);
