@@ -20,9 +20,10 @@ Options:
     -x, --hexadecimal  Set radix to hexadecimal.
 
 Example:
-    radix -d 0o27
-    radix -x 0b1010011
-    radix -b --negative 144
+    radix 42
+    radix -d 0o52
+    radix -x 0b101010
+    radix -no 0x2a
 ";
 
 #[derive(Debug)]
