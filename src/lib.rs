@@ -1,4 +1,4 @@
-use std::process;
+use std::process::exit;
 
 use docopt::Docopt;
 
@@ -41,14 +41,14 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(argv: &[String]) -> Result<Config, &'static str> {
+    pub fn new(argv: &[String]) -> Config {
         let args = Docopt::new(USAGE)
             .and_then(|d| d.argv(argv.iter()).parse())
             .unwrap_or_else(|e| e.exit());
 
         if args.get_bool("-v") {
             println!("radix {}", VERSION);
-            process::exit(0);
+            exit(0);
         }
 
         let value = args.get_str("<value>").to_string();
@@ -65,83 +65,48 @@ impl Config {
             radix = Radix::Decimal;
         }
 
-        Ok(Config {
+        Config {
             value,
             radix,
             negative,
-        })
+        }
     }
 }
 
 pub fn run(config: Config) -> Result<String, String> {
     let mut n: u32;
-    let s: String;
+    let mut s: String;
 
-    if config.value.starts_with('0') && config.value.len() >= 2 {
-        n = match &config.value[0..2] {
+    n = if config.value.starts_with('0') && config.value.len() >= 2 {
+        match &config.value[0..2] {
             "0b" => from_string_radix(&config.value[2..], 2)?,
             "0o" => from_string_radix(&config.value[2..], 8)?,
             "0x" => from_string_radix(&config.value[2..], 16)?,
             _ => return Err(format!("unknown prefix {}", &config.value[0..2])),
-        };
-
-        if config.negative {
-            s = twos_complement(&to_string_radix(n, 2)?, false);
-            n = from_string_radix(&s, 2)?;
-        }
-
-        match config.radix {
-            Radix::Decimal => {
-                let mut s = to_string_radix(n, 10)?;
-                if config.negative {
-                    s.insert(0, '-');
-                }
-                Ok(s)
-            }
-            Radix::Binary => Ok(format!("0b{}", to_string_radix(n, 2)?)),
-            Radix::Octal => Ok(format!("0o{}", to_string_radix(n, 8)?)),
-            Radix::Hexadecimal => Ok(format!("0x{}", to_string_radix(n, 16)?)),
         }
     } else {
-        n = from_string_radix(&config.value, 10)?;
+        from_string_radix(&config.value, 10)?
+    };
 
-        if config.negative {
-            s = twos_complement(&to_string_radix(n, 2)?, true);
-            n = from_string_radix(&s, 2)?;
-        }
-
-        match config.radix {
-            Radix::Decimal => {
-                let mut s = to_string_radix(n, 10)?;
-                if config.negative {
-                    s.insert(0, '-');
-                }
-                Ok(s)
-            }
-            Radix::Binary => Ok(format!("0b{}", to_string_radix(n, 2)?)),
-            Radix::Octal => Ok(format!("0o{}", to_string_radix(n, 8)?)),
-            Radix::Hexadecimal => Ok(format!("0x{}", to_string_radix(n, 16)?)),
-        }
-    }
-}
-
-fn to_string_radix(mut n: u32, radix: u32) -> Result<String, String> {
-    let mut s = vec![];
-
-    while n > 0 {
-        let d = n % radix;
-        match std::char::from_digit(d, radix) {
-            Some(c) => s.push(c),
-            None => return Err(format!("invalid digit {} for radix {}", d, radix)),
-        }
-        n /= radix;
+    if config.negative {
+        println!("is_negative = {}", is_negative(&config.value));
+        s = trim_leading_ones(&to_string_radix(!n + 1, 2)?, !is_negative(&config.value));
+        n = from_string_radix(&s, 2)?;
+        println!("s = {}, n = {}", s, n);
     }
 
-    if s.is_empty() {
-        Ok(String::from("0"))
-    } else {
-        Ok(s.iter().rev().collect())
-    }
+    s = match config.radix {
+        Radix::Decimal => format!(
+            "{}{}",
+            if config.negative { "-" } else { "" },
+            to_string_radix(n, 10)?
+        ),
+        Radix::Binary => format!("0b{}", to_string_radix(n, 2)?),
+        Radix::Octal => format!("0o{}", to_string_radix(n, 8)?),
+        Radix::Hexadecimal => format!("0x{}", to_string_radix(n, 16)?),
+    };
+
+    Ok(s)
 }
 
 fn from_string_radix(s: &str, radix: u32) -> Result<u32, String> {
@@ -166,29 +131,49 @@ fn from_string_radix(s: &str, radix: u32) -> Result<u32, String> {
     Ok(result)
 }
 
-fn twos_complement(bin_str: &str, p2n: bool) -> String {
-    let last1 = bin_str
-        .chars()
-        .rev()
-        .position(|c| c == '1')
-        .unwrap_or_else(|| bin_str.len());
-    let mut result = bin_str
-        .char_indices()
-        .fold(String::new(), |mut acc, (i, c)| {
-            if i < bin_str.len() - 1 - last1 {
-                if c == '0' {
-                    acc.push('1');
-                } else {
-                    acc.push('0');
-                }
-            } else {
-                acc.push(c);
-            }
-            acc
-        });
+fn to_string_radix(mut n: u32, radix: u32) -> Result<String, String> {
+    let mut s = vec![];
 
-    result.insert(0, if p2n { '1' } else { '0' });
-    result
+    while n > 0 {
+        let d = n % radix;
+        match std::char::from_digit(d, radix) {
+            Some(c) => s.push(c),
+            None => return Err(format!("invalid digit {} for radix {}", d, radix)),
+        }
+        n /= radix;
+    }
+
+    if s.is_empty() {
+        Ok(String::from("0"))
+    } else {
+        Ok(s.iter().rev().collect())
+    }
+}
+
+fn is_negative(s: &str) -> bool {
+    if s.starts_with('0') && s.len() >= 2 {
+        match &s[0..2] {
+            "0b" => s[2..].starts_with('1'),
+            "0o" => {
+                char::to_digit(s[2..].chars().next().unwrap_or('0'), 8).map_or(false, |d| d > 4)
+            }
+            "0x" => {
+                char::to_digit(s[2..].chars().next().unwrap_or('0'), 16).map_or(false, |d| d > 7)
+            }
+            _ => false,
+        }
+    } else {
+        false
+    }
+}
+
+fn trim_leading_ones(bin_str: &str, leave_one: bool) -> String {
+    bin_str
+        .chars()
+        .position(|c| c == '0')
+        .map_or(bin_str.to_string(), |i| {
+            format!("{}{}", if leave_one { "1" } else { "" }, &bin_str[i..])
+        })
 }
 
 #[cfg(test)]
@@ -198,7 +183,7 @@ mod tests {
     fn test_config(mut args: Vec<&'static str>) -> Config {
         args.insert(0, "radix");
         let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-        Config::new(&args).unwrap()
+        Config::new(&args)
     }
 
     #[test]
@@ -346,5 +331,10 @@ mod tests {
         let args = vec!["0x23423349827349"];
         let config = test_config(args);
         assert!(run(config).is_err());
+    }
+
+    #[test]
+    fn test_is_negative() {
+        assert!(is_negative("0b1011"));
     }
 }

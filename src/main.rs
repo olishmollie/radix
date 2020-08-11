@@ -1,16 +1,12 @@
 use std::env;
 use std::process::exit;
 
-use radix::run;
-use radix::Config;
+use radix::*;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
 
-    let config = Config::new(&argv).unwrap_or_else(|err| {
-        eprintln!("{}", err);
-        exit(1);
-    });
+    let config = Config::new(&argv);
 
     match run(config) {
         Ok(s) => println!("{}", s),
