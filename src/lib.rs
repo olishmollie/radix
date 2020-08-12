@@ -1,3 +1,4 @@
+//! Command line utility to convert a number from binary, octal, decimal, and hexadecimal to a number of one of the same radices.
 use std::process::exit;
 
 use docopt::Docopt;
@@ -104,23 +105,15 @@ pub fn convert(options: Options) -> Result<String, String> {
     };
 
     if options.twos_complement {
-        // Go through binary if we need two's complement representation.
+        // Go through binary if two's complement representation is needed.
         n = from_string_radix(
             &trim_leading_ones(&to_string_radix(!n + 1, 2)?, !is_negative(&options.value)),
             2,
         )?;
     }
 
-    if options.radix.is_none() {
-        Ok(format!(
-            "Decimal: {}\nBinary: 0b{}\nOctal: 0o{}\nHexadecimal: 0x{}",
-            to_string_radix(n, 10)?,
-            to_string_radix(n, 2)?,
-            to_string_radix(n, 8)?,
-            to_string_radix(n, 16)?
-        ))
-    } else {
-        Ok(match options.radix.unwrap() {
+    if let Some(radix) = options.radix {
+        Ok(match radix {
             Radix::Decimal => format!(
                 "{}{}",
                 if options.twos_complement { "-" } else { "" },
@@ -130,6 +123,14 @@ pub fn convert(options: Options) -> Result<String, String> {
             Radix::Octal => format!("0o{}", to_string_radix(n, 8)?),
             Radix::Hexadecimal => format!("0x{}", to_string_radix(n, 16)?),
         })
+    } else {
+        Ok(format!(
+            "Decimal: {}\nBinary: 0b{}\nOctal: 0o{}\nHexadecimal: 0x{}",
+            to_string_radix(n, 10)?,
+            to_string_radix(n, 2)?,
+            to_string_radix(n, 8)?,
+            to_string_radix(n, 16)?
+        ))
     }
 }
 
@@ -174,6 +175,7 @@ fn to_string_radix(mut n: u32, radix: u32) -> Result<String, String> {
     }
 }
 
+/// Parses s to determine radix, then returns whether the sign bit is set.
 fn is_negative(s: &str) -> bool {
     if s.starts_with('0') && s.len() >= 2 {
         match &s[0..2] {
