@@ -1,0 +1,127 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    callback changed(string);
+
+    in-out property <string> label: "0";
+
+    in property <string> hex: "0";
+    in property <string> oct: "0";
+    in property <string> dec: "0";
+    in property <string> bin: "0";
+
+    VerticalBox {
+        Text {
+            text: "\{root.label}";
+            horizontal-alignment: center;
+        }
+
+        VerticalBox {
+            Text {
+                text: "Decimal: \{root.dec}";
+            }
+
+            Text {
+                text: "Hexadecimal: \{root.hex}";
+            }
+
+            Text {
+                text: "Octal: \{root.oct}";
+            }
+
+            Text {
+                text: "Binary: \{root.bin}";
+            }
+        }
+
+        VerticalBox {
+            HorizontalBox {
+                Button {
+                    text: "C";
+                    clicked => {
+                        root.label = 0;
+                        root.changed(0);
+                    }
+                }
+            }
+
+            HorizontalBox {
+                Button {
+                    text: "7";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "8";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "9";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+            }
+
+            HorizontalBox {
+                Button {
+                    text: "4";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "5";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "6";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+            }
+
+            HorizontalBox {
+                Button {
+                    text: "1";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "2";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+
+                Button {
+                    text: "3";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+            }
+
+            HorizontalBox {
+                Button {
+                    text: "0";
+                    clicked => {
+                        root.changed(self.text)
+                    }
+                }
+            }
+        }
+    }
+}
