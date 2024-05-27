@@ -1,6 +1,6 @@
 import { Button, GridBox, HorizontalBox, VerticalBox } from "std-widgets.slint";
 
-component ModeBox {
+component RadixBox {
     callback clicked;
 
     in property <string> value: "0";
@@ -15,7 +15,6 @@ component ModeBox {
             HorizontalBox {
                 Text {
                     text: "\{mode}: \{value}";
-                    // width: parent.width;
                     overflow: elide;
                     font-size: 16px;
                 }
@@ -29,35 +28,52 @@ component ModeBox {
 }
 
 export component AppWindow inherits Window {
-    pure callback update();
+    pure callback update_screen(string);
+    pure callback update_radix_boxes();
     pure callback backspace();
+    pure callback check_valid_keypress(string) -> bool;
 
-    in-out property <string> label: "0";
+    in-out property <string> screen: "0";
+    in-out property <bool> dirty;
 
-    out property <bool> dirty;
     out property <string> mode: "Dec";
 
+    in property <string> bin: "0";
+    in property <string> dec: "0";
     in property <string> hex: "0";
     in property <string> oct: "0";
-    in property <string> dec: "0";
-    in property <string> bin: "0";
 
-    function update_label(s: string) {
-        if self.label == "0" || self.dirty {
-            self.label = s;
-            self.dirty = false;
-        } else {
-            self.label += s;
-        }
-    }
-
-    function clear_label() {
-        self.label = "0";
+    function clear_screen() {
+        self.screen = "0";
     }
 
     title: "Radix";
     width: 400px;
     default-font-family: "Mononoki Nerd Font";
+
+    FocusScope {
+        init => {
+            self.focus();
+        }
+        key-pressed(event) => {
+            // if (event.modifiers.control) {
+            //     debug("control was pressed during this event");
+            // }
+            if (event.text == Key.Backspace) {
+                root.backspace();
+                root.update_radix_boxes();
+            } else if (event.text == Key.Escape) {
+                root.clear_screen();
+                root.update_radix_boxes();
+            } else {
+                if root.check_valid_keypress(event.text) {
+                    root.update_screen(event.text);
+                    root.update_radix_boxes();
+                }
+            }
+            accept
+        }
+    }
 
     VerticalBox {
         Rectangle {
@@ -66,7 +82,7 @@ export component AppWindow inherits Window {
             border-radius: 20px;
             Text {
                 width: parent.width;
-                text: "\{root.label}";
+                text: "\{root.screen}";
                 color: greenyellow;
                 font-size: 32px;
                 overflow: elide;
@@ -74,7 +90,7 @@ export component AppWindow inherits Window {
             }
         }
 
-        ModeBox {
+        RadixBox {
             mode: "Dec";
             value: root.dec;
             selected: root.mode == self.mode;
@@ -86,7 +102,7 @@ export component AppWindow inherits Window {
             }
         }
 
-        ModeBox {
+        RadixBox {
             mode: "Hex";
             value: root.hex;
             selected: root.mode == self.mode;
@@ -98,7 +114,7 @@ export component AppWindow inherits Window {
             }
         }
 
-        ModeBox {
+        RadixBox {
             mode: "Oct";
             value: root.oct;
             selected: root.mode == self.mode;
@@ -110,7 +126,7 @@ export component AppWindow inherits Window {
             }
         }
 
-        ModeBox {
+        RadixBox {
             mode: "Bin";
             value: root.bin;
             selected: root.mode == self.mode;
@@ -128,8 +144,8 @@ export component AppWindow inherits Window {
                 row: 0;
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -137,8 +153,8 @@ export component AppWindow inherits Window {
                 text: "E";
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -146,8 +162,8 @@ export component AppWindow inherits Window {
                 text: "F";
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -156,8 +172,8 @@ export component AppWindow inherits Window {
                 row: 1;
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -165,8 +181,8 @@ export component AppWindow inherits Window {
                 text: "B";
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -174,8 +190,8 @@ export component AppWindow inherits Window {
                 text: "C";
                 enabled: root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -184,8 +200,8 @@ export component AppWindow inherits Window {
                 row: 2;
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -193,8 +209,8 @@ export component AppWindow inherits Window {
                 text: "8";
                 enabled: root.mode == "Dec" || root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -202,8 +218,8 @@ export component AppWindow inherits Window {
                 text: "9";
                 enabled: root.mode == "Dec" || root.mode == "Hex";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -212,8 +228,8 @@ export component AppWindow inherits Window {
                 row: 3;
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -221,8 +237,8 @@ export component AppWindow inherits Window {
                 text: "5";
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -230,8 +246,8 @@ export component AppWindow inherits Window {
                 text: "6";
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -239,8 +255,8 @@ export component AppWindow inherits Window {
                 text: "1";
                 row: 4;
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -248,8 +264,8 @@ export component AppWindow inherits Window {
                 text: "2";
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -257,25 +273,25 @@ export component AppWindow inherits Window {
                 text: "3";
                 enabled: root.mode != "Bin";
                 clicked => {
-                    root.update_label(self.text);
-                    root.update();
-                }
-            }
-
-            Button {
-                text: "0";
-                row: 5;
-                clicked => {
-                    root.update_label(self.text);
-                    root.update();
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
             Button {
                 text: "CE";
+                row: 5;
                 clicked => {
-                    root.clear_label();
-                    root.update();
+                    root.clear_screen();
+                    root.update_radix_boxes();
+                }
+            }
+
+            Button {
+                text: "0";
+                clicked => {
+                    root.update_screen(self.text);
+                    root.update_radix_boxes();
                 }
             }
 
@@ -283,6 +299,7 @@ export component AppWindow inherits Window {
                 text: "<-";
                 clicked => {
                     root.backspace();
+                    root.update_radix_boxes();
                 }
             }
         }
