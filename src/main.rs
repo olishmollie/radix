@@ -36,6 +36,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let new_label = SharedString::from(&label[0..label.len() - 1]);
             ui.set_label(new_label);
         }
+        ui.invoke_update();
     });
 
     ui.run()

@@ -49,12 +49,10 @@ export component AppWindow inherits Window {
         } else {
             self.label += s;
         }
-        self.update();
     }
 
     function clear_label() {
         self.label = "0";
-        self.update();
     }
 
     title: "Radix";
@@ -131,6 +129,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -139,6 +138,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -147,6 +147,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -156,6 +157,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -164,6 +166,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -172,6 +175,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -181,6 +185,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -189,6 +194,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Dec" || root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -197,6 +203,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode == "Dec" || root.mode == "Hex";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -206,6 +213,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -214,6 +222,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -222,6 +231,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -230,6 +240,7 @@ export component AppWindow inherits Window {
                 row: 4;
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -238,6 +249,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -246,6 +258,7 @@ export component AppWindow inherits Window {
                 enabled: root.mode != "Bin";
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
@@ -254,14 +267,15 @@ export component AppWindow inherits Window {
                 row: 5;
                 clicked => {
                     root.update_label(self.text);
+                    root.update();
                 }
             }
 
             Button {
                 text: "CE";
                 clicked => {
-                    root.dirty = true;
                     root.clear_label();
+                    root.update();
                 }
             }
 
@@ -269,7 +283,6 @@ export component AppWindow inherits Window {
                 text: "<-";
                 clicked => {
                     root.backspace();
-                    root.update();
                 }
             }
         }
