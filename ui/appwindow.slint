@@ -8,7 +8,7 @@ component RadixBox {
     in property <bool> selected;
 
     Rectangle {
-        border-color: selected ? white : gray;
+        border-color: selected ? black : lightgray;
         border-width: 1px;
 
         TouchArea {
@@ -52,6 +52,11 @@ export component AppWindow inherits Window {
         self.screen = "0";
     }
 
+    function set_mode(mode: string) {
+        self.mode = mode;
+        self.dirty = true;
+    }
+
     FocusScope {
         init => {
             self.focus();
@@ -64,6 +69,14 @@ export component AppWindow inherits Window {
                 } else if (event.text == Key.Escape) {
                     root.clear_screen();
                     root.update_radix_boxes();
+                } else if (event.text == "H") {
+                    root.set_mode("Hex");
+                } else if (event.text == "O") {
+                    root.set_mode("Oct");
+                } else if (event.text == "D") {
+                    root.set_mode("Dec");
+                } else if (event.text == "B") {
+                    root.set_mode("Bin");
                 } else {
                     if root.check_valid_keypress(event.text) {
                         root.update_screen(event.text);
@@ -96,8 +109,7 @@ export component AppWindow inherits Window {
             selected: root.mode == self.mode;
             clicked => {
                 if !self.selected {
-                    root.mode = self.mode;
-                    root.dirty = true;
+                    root.set_mode(self.mode);
                 }
             }
         }
@@ -108,8 +120,7 @@ export component AppWindow inherits Window {
             selected: root.mode == self.mode;
             clicked => {
                 if !self.selected {
-                    root.mode = self.mode;
-                    root.dirty = true;
+                    root.set_mode(self.mode);
                 }
             }
         }
@@ -120,8 +131,7 @@ export component AppWindow inherits Window {
             selected: root.mode == self.mode;
             clicked => {
                 if !self.selected {
-                    root.mode = self.mode;
-                    root.dirty = true;
+                    root.set_mode(self.mode);
                 }
             }
         }
@@ -132,8 +142,7 @@ export component AppWindow inherits Window {
             selected: root.mode == self.mode;
             clicked => {
                 if !self.selected {
-                    root.mode = self.mode;
-                    root.dirty = true;
+                    root.set_mode(self.mode);
                 }
             }
         }
