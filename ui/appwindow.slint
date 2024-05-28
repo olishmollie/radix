@@ -28,6 +28,11 @@ component RadixBox {
 }
 
 export component AppWindow inherits Window {
+    title: "Radix";
+    width: 400px;
+    default-font-family: "Mononoki Nerd Font";
+    icon: @image-url("assets/R.png");
+
     pure callback update_screen(string);
     pure callback update_radix_boxes();
     pure callback backspace();
@@ -47,28 +52,23 @@ export component AppWindow inherits Window {
         self.screen = "0";
     }
 
-    title: "Radix";
-    width: 400px;
-    default-font-family: "Mononoki Nerd Font";
-
     FocusScope {
         init => {
             self.focus();
         }
         key-pressed(event) => {
-            // if (event.modifiers.control) {
-            //     debug("control was pressed during this event");
-            // }
-            if (event.text == Key.Backspace) {
-                root.backspace();
-                root.update_radix_boxes();
-            } else if (event.text == Key.Escape) {
-                root.clear_screen();
-                root.update_radix_boxes();
-            } else {
-                if root.check_valid_keypress(event.text) {
-                    root.update_screen(event.text);
+            if (!event.modifiers.control) {
+                if (event.text == Key.Backspace) {
+                    root.backspace();
                     root.update_radix_boxes();
+                } else if (event.text == Key.Escape) {
+                    root.clear_screen();
+                    root.update_radix_boxes();
+                } else {
+                    if root.check_valid_keypress(event.text) {
+                        root.update_screen(event.text);
+                        root.update_radix_boxes();
+                    }
                 }
             }
             accept
